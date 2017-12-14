@@ -2,7 +2,7 @@
 # This script cuts the concatenated coprus into a choosen number of parts
 # Here, 10 sub-parts to perform several analysis of variance.
 # Laia Fibla laia.fibla.reixachs@gmail.com 2017-03-22
-# Modified by Georgia Loukatou georgialoukatou@gmail.com 14-12-2017 
+# Modified minimally by Georgia Loukatou georgialoukatou@gmail.com 14-12-2017 
 
 ##### Variables #####
 

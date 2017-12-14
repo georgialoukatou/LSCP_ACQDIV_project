@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#Georgia Loukatou, georgialoukatou@gmail.com, 14-12-2017
+#Extracts real onsets from Russian acqdiv corpus
+
 import re
 import numpy as np
 import fileinput

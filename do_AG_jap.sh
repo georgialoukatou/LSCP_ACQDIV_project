@@ -49,7 +49,7 @@ then
     NITER=10
     NRED=0
 else
-    NITER=2400
+    NITER=1600
     NRED=100
 fi
 

@@ -82,5 +82,4 @@ sed -i 's/\s/,/g'  $SEGMENT/rows.txt
 
 #merge all
 cat ${RES}/all_eval*.csv >> ${RES}/merged_eval_${LANGUAGE}_${LEVEL}.csv
-sed -i 1i"language,algorithm,level,fscore,subalgorithm" ${RES}/merged_eval_${LANGUAGE}_${LEVEL}.csv
 cp ${ROOT}/Chintang/utterance/results/merged_eval_${LANGUAGE}_${LEVEL}.csv ${ROOT}/

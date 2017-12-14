@@ -34,5 +34,3 @@ do
   done
 done
 
-echo $output
-

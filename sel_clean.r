@@ -1,5 +1,5 @@
 #!/usr/bin/env Rscript
-#Georgia Loukatou georgialoukatou 14-12-2017
+#Georgia Loukatou georgialoukatou@gmail.com 14-12-2017
 
 #Extracts CDS utterances from ACQDIV database
 args<-commandArgs(trailingOnly=TRUE)

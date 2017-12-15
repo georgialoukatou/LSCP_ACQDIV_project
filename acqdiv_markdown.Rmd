@@ -71,13 +71,10 @@ echo "works"
 mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE
 mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE/$LEVEL
 
-INPUT_FILE="/Users/lscpuser/Documents/acqdiv/acqdiv_corpora/acqdiv_corpus_2017-09-28_CRJ.rda"
-#INPUT_FILE="/scratch2/gloukatou/master_project/acqdiv_corpus_2017-09-28_CRJ.rda"
+INPUT_FILE="/scratch2/gloukatou/master_project/acqdiv_corpus_2017-09-28_CRJ.rda"
 ROOT="/scratch2/gloukatou/master_project" # no / at the end
-#RESULT_FOLDER="/scratch2/gloukatou/master_project/$LANGUAGE/$LEVEL" # no / at the end
-RESULT_FOLDER="/Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE/$LEVEL" 
-#SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
-SCRIPT_FOLDER="/Users/lscpuser/Documents/acqdiv/acqDiv"
+RESULT_FOLDER="/scratch2/gloukatou/master_project/$LANGUAGE/$LEVEL" # no / at the end
+SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
 
 #[3]
 Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_corpus.txt $LANGUAGE $LEVEL

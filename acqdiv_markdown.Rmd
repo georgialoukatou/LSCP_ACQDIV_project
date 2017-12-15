@@ -1,0 +1,252 @@
+---
+title: "Acqdiv_markdown"
+author: "Georgia Loukatou"
+output: html_document
+---
+## R Markdown
+
+[1]
+This script has been created to show the pipeline for segmenting the acqdiv corpus. The languages used are Chintang, Japanese and Russian.
+
+First of all, choose the language with which you want to start.
+If you wish to evaluate them on their morpheme level (not provided for Russian), declare it below at the LEVEL variable.
+
+[2]
+Add the path to the database, the script folder and to the place you want to save the extracted corpus.
+
+[3]
+Extract the corpus using the file sel_clean.r and save it in a file named extracted_corpus.txt. This script takes the CDS from the ACQDIV database and saves it, one utterance per line. Then, it removes all NAs.
+
+[4]
+If and only if processing the Russian corpus, follow the instructions below and then move immediately to [9]. The corpus will be phonologized by festival, so a different pipeline is needed.
+If you process Chintang or Japanese, skip this step.
+
+[5]
+Divide the corpus of the file extracted_corpus.txt in 10 sub-parts, in a folder named "concatenate"" and the subcorpora will be called divided_corpus.txt.
+
+[6] 
+Then, we can clean and phonologize the sub-corpora. For this, need to create a for loop.
+
+
+[7]
+If processing the Japanese morpheme corpus, please add a space where - before phonologizing. If not the morpheme annotations will be lost during the cleaning phase.
+
+[8]
+Now we can phonologize the corpora. For this, we need to have the script new-syllabify-corpus.pl, as well as the Chintang and Japanese ValidOnsets and Vowels files in the $SCRIPT_FOLDER path. 
+The results will be a clean_corpus-tags.txt file and a clean_corpus-gold.txt file for each one of the 10 parts. 
+The last commands do not find anything (normally), they are just for precaution measures.
+
+[9]
+This command would give the descriptive statistics of the corpus. Attention! The commands in steps 9,10,11 and 12 can only be ran in oberon, because they need the new wordseg package.
+
+[10]! In oberon
+Now it's segmentation time. Always in the for loop, run TPs and DiBS with the new wordseg package on oberon. We should also declare your gold and tags files. 
+
+[11]! In oberon
+I run AG with the old wordseg version for now. The script segment_jap.py works for both Japanese and Chintang, so there is no need to change it. ${PATH_TO_OLD_WORDSEG} is needed. Attention! AGu takes a lot of time. Then, we can close the loop.
+
+[12]! In oberon
+There is a simple baseline available which cuts every syllable/phoneme with probability 0.5.
+
+[13]
+Now we need to bring all the results together in one file. For this, we can use the collapse_results.sh file. The generated files will be put in the following path: $/ROOT. ! Attention changes have to be made depending on which results we are interested on, baselines, average TP.... If we don't want the average TP scores, we can use this script, if yes, we need to change it.
+
+[14]
+In order to proceed to the regression, the files which are now at $ROOT must be merged in one.
+
+[15]
+An appropriate header should be added, depending on what information there is in our file.
+
+[16]
+Regression. Results can be found in /scratch2/gloukatou/master_project.
+
+
+```{bash, echo=FALSE}
+#[1]
+LANGUAGE="Chintang" # or Japanese, Russian
+LEVEL="utterance" # or utterance_morphemes
+
+echo "works"
+
+#[2]
+mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE
+mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE/$LEVEL
+
+INPUT_FILE="/Users/lscpuser/Documents/acqdiv/acqdiv_corpora/acqdiv_corpus_2017-09-28_CRJ.rda"
+#INPUT_FILE="/scratch2/gloukatou/master_project/acqdiv_corpus_2017-09-28_CRJ.rda"
+ROOT="/scratch2/gloukatou/master_project" # no / at the end
+#RESULT_FOLDER="/scratch2/gloukatou/master_project/$LANGUAGE/$LEVEL" # no / at the end
+RESULT_FOLDER="/Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE/$LEVEL" 
+#SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
+SCRIPT_FOLDER="/Users/lscpuser/Documents/acqdiv/acqDiv"
+
+#[3]
+Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_corpus.txt $LANGUAGE $LEVEL
+sed 's/NA//g' < $RESULT_FOLDER/extracted_corpus.txt > $RESULT_FOLDER/extracted_corpus1.txt
+
+#[4]Only for Russian!
+
+#basic cleaning before phonemizing
+sed -i -e 's/)//g' -e 's/xxx//g' -e 's/(//g' -e 's/&//g' -e 's/\^//g'  -e 's/NA//g' -e '/^$/d' -e 's/?//g' -e 's/-/ /g' $RESULT_FOLDER/extracted_corpus1.txt
+tr '[:upper:]' '[:lower:]' < $RESULT_FOLDER/extracted_corpus1.txt > $RESULT_FOLDER/extracted_corpus.txt
+#echo "done cleaning corpus"
+
+#cut in subparts
+bash $SCRIPT_FOLDER/cut.sh $RESULT_FOLDER $RESULT_FOLDER/concatenate extracted_corpus.txt divided_corpus.txt
+
+#in oberon
+#load festival
+module load espeak festival python-anaconda
+source activate wordseg
+
+#for loop
+for VERSION in $RESULT_FOLDER/concatenate/*
+do
+
+  if [ -d $VERSION ]
+   then
+       echo "$VERSION"
+
+#phonemizing..attention! it takes about 2-3 hours.     
+phonemize -j 10 -l ru -p " " -w " ;eword " $VERSION/divided_corpus.txt -o $VERSION/phonemized_corpus.txt --strip
+echo "done phonemizing corpus"
+
+#fix words that have been cut and remove labels from phonologization
+sed -e 's/e ɪ/eɪ/g' -e 's/d ʒ/dʒ/g' -e 's/ə ʊ/əʊ/g' -e 's/ə l/əl/g' -e 's/t ʃ/tʃ/g' -e 's/a ɪ/aɪ/g' -e 's/( r u)/ ;eword /g' -e 's/( e n)//g'  $VERSION/phonemized_corpus.txt > $VERSION/clean_corpus.txt
+#echo "done fixing phonologization errors"
+
+# run script to collect onsets
+python $SCRIPT_FOLDER//syllabify_russian_extract_onsets.py $VERSION/clean_corpus.txt $VERSION/russian_onsets.txt
+#echo "done extracting onsets"
+
+mkdir $VERSION/results
+#phonologise and syllabify
+bash $SCRIPT_FOLDER//phonologize_rus.sh russian $VERSION $VERSION
+#echo "done phonologizing"
+
+pcregrep --color='auto' -n '[^\x00-\x7F]' $VERSION/clean_corpus-gold.txt
+
+
+#[5]
+bash $SCRIPT_FOLDER/cut.sh $RESULT_FOLDER $RESULT_FOLDER/concatenate extracted_corpus.txt divided_corpus.txt
+
+#[6]
+for VERSION in $RESULT_FOLDER/concatenate/*
+do
+    if [ -d $VERSION ]
+    then
+        echo "$VERSION"
+
+#[7]
+sed -i 's/-/ -/g' $VERSION/divided_corpus.txt 
+
+
+
+#[8]
+bash $SCRIPT_FOLDER/phonologize_newtags.sh $LANGUAGE $SCRIPT_FOLDER $VERSION
+
+LANG=C
+LC_CTYPE=C
+
+#Precautionary measures
+sed -i -e 's/[^\x00-\x7F]//g' -e 's/^\s//g' -e 's/^;esyll ;eword //g'  $VERSION/clean_corpus-gold.txt
+sed -i -e 's/[^\x00-\x7F]//g' -e 's/^\s//g' -e 's/^;esyll ;eword //g'  $VERSION/clean_corpus-tags.txt 
+#perl -i.bak -pe 's/[^[:ascii:]]//g' $VERSION/clean_corpus-gold.txt
+#perl -i.bak -pe 's/[^[:ascii:]]//g' $VERSION/clean_corpus-tags.txt
+#perl -i.bak -pe 's/[^\s//g' $VERSION/clean_corpus-gold.txt
+#perl -i.bak -pe 's/[^\s//g' $VERSION/clean_corpus-tags.txt
+
+pcregrep --color='auto' -n '[^\x00-\x7F]' $VERSION/clean_corpus-gold.txt
+
+#[9]
+source activate wordseg
+
+cat $RESULT_FOLDER/concatenate/*/clean_corpus-tags.txt >> $RESULT_FOLDER/all_tags.txt
+wordseg-stats $RESULT_FOLDER/all_tags.txt -o $RESULT_FOLDER/descript_stats.txt
+
+
+#[10]
+
+THISGOLD="$VERSION/clean_corpus-gold.txt"
+THISTAG="${THISGOLD/gold/tags}"
+
+mkdir $VERSION/results
+
+module load python-anaconda
+source activate wordseg
+
+cat $THISTAG | wordseg-prep -u syllable --gold /$VERSION/gold.txt > /$VERSION/prepared_syll.txt
+cat $VERSION/prepared_syll.txt | wordseg-tp -t relative -p forward > $VERSION/results/segmented.ftp_rel.txt
+cat $VERSION/results/segmented.ftp_rel.txt | wordseg-eval $VERSION/gold.txt > $VERSION/results/eval.ftp_rel.txt
+
+cat $VERSION/prepared_syll.txt | wordseg-tp -t absolute -p forward > $VERSION/results/segmented.ftp_abs.txt
+cat $VERSION/results/segmented.ftp_abs1.txt | wordseg-eval $VERSION/gold.txt > $VERSION/results/eval.ftp_abs.txt
+
+cat $VERSION/prepared_syll.txt | wordseg-tp -t relative -p backward > $VERSION/results/segmented.btp_rel.txt
+cat $VERSION/results/segmented.btp_rel.txt | wordseg-eval $VERSION/gold.txt > $VERSION/results/eval.btp_rel.txt
+
+cat $VERSION/prepared_syll.txt | wordseg-tp -t absolute -p backward > $VERSION/results/segmented.btp_abs.txt
+cat $VERSION/results/segmented.btp_abs.txt | wordseg-eval $VERSION/gold.txt > $VERSION/results/eval.btp_abs.txt
+
+cat $THISTAG | wordseg-prep --gold $VERSION/results/gold.txt > $VERSION/results/prepared.txt
+head -200 $THISTAG > $VERSION/results/train.txt
+wordseg-dibs -t phrasal -o $VERSION/results/segmented.dibs.txt $VERSION/results/prepared.txt  $VERSION/results/train.txt
+wordseg-eval -o $VERSION/results/eval.dibs.txt $VERSION/results/segmented.dibs.txt $VERSION/results/gold.txt
+
+
+
+#[11]
+
+PATH_TO_OLD_WORDSEG="/scratch2/gloukatou/CDSwordSeg"
+
+#python $PATH_TO_OLD_WORDSEG/algoComp/segment_jap.py $THISTAG --goldfile $THISGOLD \
+#	--output-dir $VERSION/results \
+ #      --algorithms dibs \
+  #     --verbose
+
+python $PATH_TO_OLD_WORDSEG/algoComp/segment_jap.py $THISTAG --goldfile $THISGOLD \
+	--output-dir $VERSION/results \
+       --algorithms AGu --ag-median 1 \
+       --verbose --sync
+
+echo "done segmentation"
+
+fi
+done
+
+
+#[12]
+
+source activate wordseg
+cat $THISTAG | wordseg-prep -u syllable --gold $VERSION/results/gold_syll.txt > $VERSION/results/prepared_syll.txt
+wordseg-baseline --probability 0.5 $VERSION/results/prepared_syll.txt -o $VERSION/results/segmented.baseline_syll.txt
+cat $VERSION/results/segmented.baseline_syll.txt | wordseg-eval $VERSION/results/gold_syll.txt > $VERSION/results/eval.baseline_syll.txt
+
+#[13]
+
+bash $SCRIPT_FOLDER/collapse_results.sh $LANGUAGE $LEVEL $ROOT
+
+#[14]
+
+cat $ROOT/merged*.csv >> $ROOT/merged_Chintang_Japanese_Russian.csv
+sed -i -e 's/utterance_morphemes/morphemes/g' -e 's/utterance/words/g'  $ROOT/regression_Chintang_Japanese.csv
+
+#[15]
+sed -i 1i"language,algorithm,level,fscore,subalgorithm,subcorpora" $ROOT/merged_Chintang_Japanese_Russian.csv
+
+#[16]
+
+#either run the script:
+#Rscript $SCRIPT_FOLDER/regression.r $ROOT/regression_Chintang_Japanese.csv $ROOT/plot.jpg > $ROOT/regression.txt
+
+#or
+data<-read.csv("$ROOT/merged_Chintang_Japanese_Russian.csv")
+data$xval=jitter(as.numeric(as.factor(data$languages))*2)
+plot(data$fscores~data$xval,col=as.numeric(as.factor(data$algorithms)),pch=20)
+plot(data$fscores~data$xval,col=as.numeric(as.factor(data$algorithms)),pch=20,xaxt='n',xlab="", ylab='F-scores', ylim=c(0.2, 0.6), cex.lab = 1.4, cex.axis = 1.4, main="Segmentation F-scores", cex=2)
+legend('topright', legend=c('AG', 'TPs', 'DiBS', 'baseline'), pch=c(20,20,20,20), col=c('black', 'blue', 'green', 'red'), cex=0.75, pt.cex =3)
+axis(1,at=c(2,4,5.6),labels=c(" Chintang","Japanese", "Russian"), cex.axis = 1.8 )
+
+```
+
+

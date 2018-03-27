@@ -78,6 +78,7 @@ SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
 
 #[3]
 Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_corpus.txt $LANGUAGE $LEVEL
+grep -v "?" extracted_corpus.txt > extracted.txt mv extracted.txt extracted_corpus.txt
 sed 's/NA//g' < $RESULT_FOLDER/extracted_corpus.txt > $RESULT_FOLDER/extracted_corpus1.txt
 
 #[4]Only for Russian!

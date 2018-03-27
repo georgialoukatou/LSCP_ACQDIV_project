@@ -92,7 +92,8 @@ sink()
 
 ##########missing SOS
 sed 's/-//g' 
-
+...
+sed '/^\s*$/d' cleaned_file.txt > extracted_corpus1.txt
 
 #[4]Only for Russian!
 

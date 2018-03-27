@@ -80,6 +80,20 @@ SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
 Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_corpus.txt $LANGUAGE $LEVEL
 grep -v "?" | grep -v "NA"  extracted_corpus.txt > extracted.txt mv extracted.txt extracted_corpus.txt
 
+#For Chintang, remove Nepali morphemes and words:
+morpheme_data<-data.frame(morphemes)
+clean_corpus<-morpheme_data[ , c('morpheme_language', "morpheme")]
+language_data<-clean_corpus[clean_corpus$morpheme_language=="Nepali", ]
+list.var<-unique(language_data$morpheme)
+options(max.print=20000)
+sink("nepali.txt")
+print(list.var)
+sink()
+
+##########missing SOS
+sed 's/-//g' 
+
+
 #[4]Only for Russian!
 
 #basic cleaning before phonemizing

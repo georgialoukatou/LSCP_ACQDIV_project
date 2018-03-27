@@ -135,6 +135,7 @@ do
 
 #[7]
 sed -i 's/-/ -/g' $VERSION/divided_corpus.txt 
+sed -e 's/&PRES//g' -e 's/&IMP//g' -e 's/&ADV//g' -e 's/&SGER//g' -e 's/&NEG//g' -e 's/&POL//g' -e 's/&CONN//g' -e 's/&PAST//g' -e 's/&COND//g' -e 's/&PASS//g' -e 's/&QUOT//g' -e 's/&CAUS//g' -e 's/&P$  -e 's/\^//g' -e "s/\'//g"  -e 's/)//g' -e 's/(//g' -e 's/&//g'  ${VERSION}/divided_corpus.txt > ${VERSION}/divided_corpus_na.txt
 
 
 

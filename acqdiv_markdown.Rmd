@@ -60,37 +60,54 @@ An appropriate header should be added, depending on what information there is in
 Regression. Results can be found in /scratch2/gloukatou/master_project.
 
 
-```{bash, echo=FALSE}
-#[1]
-LANGUAGE="Chintang" # or Japanese, Russian
+```{bash, echo=FALSE} #[0]-parameters to run big wrap in cluster:
+
+#- passing some parameters
+#$-S /bin/bash        # the shell used
+#$-N big_wrap  # gives the name of the job
+#$-pe openmpi_ib 1   # nb of cores required (this is purely declarative)
+#$-j yes   # join stdout and stderr in the same file
+#$-q cpu   # name of the queue (cpu, gpu, all)
+#$-cwd     # puts the logs in the current directory
+
+#- some messages to the user
+/bin/echo Running on host: `hostname`.
+/bin/echo In directory: `pwd`
+echo QUEUE=$QUEUE
+echo NSLOTS=$NSLOTS
+/bin/echo Starting on: `date`
+
+#- some back magic
+#. /etc/profile.d/modules.sh
+
+module load python-anaconda
+source activate wordseg
+
+#[1] parameters to complete
+LANGUAGE="Chintang" # or Japanese
 LEVEL="utterance" # or utterance_morphemes
 
-echo "works"
 
-#[2]
+#[2] create a result folder, with language and level subfolders
+mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER
 mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE
 mkdir /Users/lscpuser/Documents/acqdiv/RESULT_FOLDER/$LANGUAGE/$LEVEL
 
-INPUT_FILE="/scratch2/gloukatou/master_project/acqdiv_corpus_2017-09-28_CRJ.rda"
-ROOT="/scratch2/gloukatou/master_project" # no / at the end
-RESULT_FOLDER="/scratch2/gloukatou/master_project/$LANGUAGE/$LEVEL" # no / at the end
+ROOT="/scratch2/gloukatou/master_project" # no / at the end 
+INPUT_FILE="$ROOT/acqdiv_corpus_2017-09-28_CRJ.rda"
+RESULT_FOLDER="$ROOT/$LANGUAGE/$LEVEL" # no / at the end
 SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
 
-#[3]
-Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_corpus.txt $LANGUAGE $LEVEL
-grep -v "?" | grep -v "NA"  extracted_corpus.txt > extracted.txt mv extracted.txt extracted_corpus.txt
+#[3] extract input from rda file, without children utterances
+Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_raw.txt $LANGUAGE $LEVEL
 
-#For Chintang, remove Nepali morphemes and words:
-morpheme_data<-data.frame(morphemes)
-clean_corpus<-morpheme_data[ , c('morpheme_language', "morpheme")]
-language_data<-clean_corpus[clean_corpus$morpheme_language=="Nepali", ]
-list.var<-unique(language_data$morpheme)
-options(max.print=20000)
-sink("nepali.txt")
-print(list.var)
-sink()
+#remove utterances with ? or NA
+grep -v "?" | grep -v "NA"  extracted_raw.txt > extracted_corpus.txt 
 
-##########missing SOS
+#FOR CHINTANG ONLY, Nepali morphemes or words have also been extracted using script "sel_nepali_from_acqdiv.r" and saved as nepali.txt (nepali words) and chintang_nepali.txt (nepali chintang words, also to be removed).
+
+#FOR CHINTANG ONLY, remove nepali words from extracted_corpus (that may take several minutes)
+
 sed 's/-//g' 
 ...
 sed '/^\s*$/d' cleaned_file.txt > extracted_corpus1.txt

@@ -102,15 +102,16 @@ SCRIPT_FOLDER="/scratch2/gloukatou/CDSwordSeg/recipes/acqdiv" # no / at the end
 Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_raw.txt $LANGUAGE $LEVEL
 
 #remove utterances with ? or NA
-grep -v "?" | grep -v "NA"  extracted_raw.txt > extracted_corpus.txt 
+grep -v "?" | grep -v "NA"  $RESULT_FOLDERextracted_raw.txt > $RESULT_FOLDERextracted_clean.txt 
 
 #FOR CHINTANG ONLY, Nepali morphemes or words have also been extracted using script "sel_nepali_from_acqdiv.r" and saved as nepali.txt (nepali words) and chintang_nepali.txt (nepali chintang words, also to be removed).
 
 #FOR CHINTANG ONLY, remove nepali words from extracted_corpus (that may take several minutes)
 
-sed 's/-//g' 
-...
-sed '/^\s*$/d' cleaned_file.txt > extracted_corpus1.txt
+sed -e 's/-//g' -e '/^\s*$/d' $RESULT_FOLDER/extracted_clean.txt > $RESULT_FOLDER/extracted_corpus.txt
+python extract_nepali.py extracted_corpus.txt
+
+
 
 #[4]Only for Russian!
 

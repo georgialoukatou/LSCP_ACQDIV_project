@@ -104,6 +104,7 @@ Rscript $SCRIPT_FOLDER/sel_clean.r $INPUT_FILE $RESULT_FOLDER/extracted_raw.txt 
 #remove utterances with ? or NA
 grep -v "?" | grep -v "NA"  $RESULT_FOLDERextracted_raw.txt > $RESULT_FOLDERextracted_clean.txt 
 
+#[4]
 #FOR CHINTANG ONLY, Nepali morphemes or words have also been extracted using script "sel_nepali_from_acqdiv.r" and saved as nepali.txt (nepali words) and chintang_nepali.txt (nepali chintang words, also to be removed).
 
 #FOR CHINTANG ONLY, remove nepali words from extracted_corpus (that may take several minutes)
@@ -111,53 +112,8 @@ grep -v "?" | grep -v "NA"  $RESULT_FOLDERextracted_raw.txt > $RESULT_FOLDERextr
 sed -e 's/-//g' -e '/^\s*$/d' $RESULT_FOLDER/extracted_clean.txt > $RESULT_FOLDER/extracted_corpus.txt
 python2 remove_nepali.py $RESULT_FOLDER/nepali_words.txt $RESULT_FOLDER/extracted_corpus.txt $RESULT_FOLDER/extracted_corpus_nonepali.txt 
 
-
-
-#[4]Only for Russian!
-
-#basic cleaning before phonemizing
-sed -i -e 's/)//g' -e 's/xxx//g' -e 's/(//g' -e 's/&//g' -e 's/\^//g'  -e 's/NA//g' -e '/^$/d' -e 's/?//g' -e 's/-/ /g' $RESULT_FOLDER/extracted_corpus1.txt
-tr '[:upper:]' '[:lower:]' < $RESULT_FOLDER/extracted_corpus1.txt > $RESULT_FOLDER/extracted_corpus.txt
-#echo "done cleaning corpus"
-
-#cut in subparts
-bash $SCRIPT_FOLDER/cut.sh $RESULT_FOLDER $RESULT_FOLDER/concatenate extracted_corpus.txt divided_corpus.txt
-
-#in oberon
-#load festival
-module load espeak festival python-anaconda
-source activate wordseg
-
-#for loop
-for VERSION in $RESULT_FOLDER/concatenate/*
-do
-
-  if [ -d $VERSION ]
-   then
-       echo "$VERSION"
-
-#phonemizing..attention! it takes about 2-3 hours.     
-phonemize -j 10 -l ru -p " " -w " ;eword " $VERSION/divided_corpus.txt -o $VERSION/phonemized_corpus.txt --strip
-echo "done phonemizing corpus"
-
-#fix words that have been cut and remove labels from phonologization
-sed -e 's/e ɪ/eɪ/g' -e 's/d ʒ/dʒ/g' -e 's/ə ʊ/əʊ/g' -e 's/ə l/əl/g' -e 's/t ʃ/tʃ/g' -e 's/a ɪ/aɪ/g' -e 's/( r u)/ ;eword /g' -e 's/( e n)//g'  $VERSION/phonemized_corpus.txt > $VERSION/clean_corpus.txt
-#echo "done fixing phonologization errors"
-
-# run script to collect onsets
-python $SCRIPT_FOLDER//syllabify_russian_extract_onsets.py $VERSION/clean_corpus.txt $VERSION/russian_onsets.txt
-#echo "done extracting onsets"
-
-mkdir $VERSION/results
-#phonologise and syllabify
-bash $SCRIPT_FOLDER//phonologize_rus.sh russian $VERSION $VERSION
-#echo "done phonologizing"
-
-pcregrep --color='auto' -n '[^\x00-\x7F]' $VERSION/clean_corpus-gold.txt
-
-
 #[5]
-bash $SCRIPT_FOLDER/cut.sh $RESULT_FOLDER $RESULT_FOLDER/concatenate extracted_corpus.txt divided_corpus.txt
+bash $SCRIPT_FOLDER/cut.sh $RESULT_FOLDER $RESULT_FOLDER/concatenate extracted_corpus_nonepali.txt divided_corpus.txt
 
 #[6]
 for VERSION in $RESULT_FOLDER/concatenate/*
@@ -166,12 +122,6 @@ do
     then
         echo "$VERSION"
 
-#[7]
-sed -i 's/-/ -/g' $VERSION/divided_corpus.txt 
-sed -e 's/&PRES//g' -e 's/&IMP//g' -e 's/&ADV//g' -e 's/&SGER//g' -e 's/&NEG//g' -e 's/&POL//g' -e 's/&CONN//g' -e 's/&PAST//g' -e 's/&COND//g' -e 's/&PASS//g' -e 's/&QUOT//g' -e 's/&CAUS//g' -e 's/&P$  -e 's/\^//g' -e "s/\'//g"  -e 's/)//g' -e 's/(//g' -e 's/&//g'  ${VERSION}/divided_corpus.txt > ${VERSION}/divided_corpus_na.txt
-
-
-
 #[8]
 bash $SCRIPT_FOLDER/phonologize_newtags.sh $LANGUAGE $SCRIPT_FOLDER $VERSION
 
@@ -179,14 +129,13 @@ LANG=C
 LC_CTYPE=C
 
 #Precautionary measures
+pcregrep --color='auto' -n '[^\x00-\x7F]' $VERSION/clean_corpus-gold.txt
 sed -i -e 's/[^\x00-\x7F]//g' -e 's/^\s//g' -e 's/^;esyll ;eword //g'  $VERSION/clean_corpus-gold.txt
 sed -i -e 's/[^\x00-\x7F]//g' -e 's/^\s//g' -e 's/^;esyll ;eword //g'  $VERSION/clean_corpus-tags.txt 
 #perl -i.bak -pe 's/[^[:ascii:]]//g' $VERSION/clean_corpus-gold.txt
 #perl -i.bak -pe 's/[^[:ascii:]]//g' $VERSION/clean_corpus-tags.txt
 #perl -i.bak -pe 's/[^\s//g' $VERSION/clean_corpus-gold.txt
 #perl -i.bak -pe 's/[^\s//g' $VERSION/clean_corpus-tags.txt
-
-pcregrep --color='auto' -n '[^\x00-\x7F]' $VERSION/clean_corpus-gold.txt
 
 #[9]
 source activate wordseg
@@ -195,7 +144,7 @@ cat $RESULT_FOLDER/concatenate/*/clean_corpus-tags.txt >> $RESULT_FOLDER/all_tag
 wordseg-stats $RESULT_FOLDER/all_tags.txt -o $RESULT_FOLDER/descript_stats.txt
 
 
-#[10]
+#[10_a]
 
 THISGOLD="$VERSION/clean_corpus-gold.txt"
 THISTAG="${THISGOLD/gold/tags}"
@@ -225,7 +174,7 @@ wordseg-eval -o $VERSION/results/eval.dibs.txt $VERSION/results/segmented.dibs.t
 
 
 
-#[11]
+#[10_b] RUN WITH OLD WORDSEG 
 
 PATH_TO_OLD_WORDSEG="/scratch2/gloukatou/CDSwordSeg"
 

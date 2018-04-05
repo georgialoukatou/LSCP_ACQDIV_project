@@ -109,7 +109,7 @@ grep -v "?" | grep -v "NA"  $RESULT_FOLDERextracted_raw.txt > $RESULT_FOLDERextr
 #FOR CHINTANG ONLY, remove nepali words from extracted_corpus (that may take several minutes)
 
 sed -e 's/-//g' -e '/^\s*$/d' $RESULT_FOLDER/extracted_clean.txt > $RESULT_FOLDER/extracted_corpus.txt
-python extract_nepali.py extracted_corpus.txt
+python2 remove_nepali.py $RESULT_FOLDER/nepali_words.txt $RESULT_FOLDER/extracted_corpus.txt $RESULT_FOLDER/extracted_corpus_nonepali.txt 
 
 
 

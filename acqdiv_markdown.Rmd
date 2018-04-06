@@ -7,37 +7,24 @@ output: html_document
 
 This script has been created to describe the pipeline for segmenting the ACQDIV corpus. The languages used are Chintang, Japanese and Russian.
 
-[1]
 We need to choose the language whose corpus we need to segment, via the variable "LANGUAGE". If we wish to evaluate them on their morpheme level (not provided for Russian), we can declare it below at the LEVEL variable.
 
-[2]
 Add basic variables, such as the path to the initial ACQDIV database, the folder that has all the scripts and to the place we want to save the extracted corpus.
 
-[3]
 Extract the corpus using the file sel_clean.r and save it in a file named extracted_corpus.txt. This script takes the Child Directed Speech (CDS) from the ACQDIV corpus and saves it, one utterance per line. Then, it removes all NAs.
 
-[4]
-If and only if we chose the Russian corpus, we have to follow all the instructions at [4] and then move immediately to [9]. This corpus will be phonologized by festival, so a different procedure is needed. If we process Chintang or Japanese, we may skip this step.
-
-[5]
 Divide the corpus of the file extracted_corpus.txt in 10 sub-parts, in a folder named "concatenate"" and the subcorpora will be called divided_corpus.txt.
 
-[6] 
 Then, we can clean and phonologize all the sub-corpora. For this, we need to create a for loop.
 
-
-[7]
 If and only if we want to segment the Japanese morpheme corpus, we need to add a space before - , in order to phonologize. If not the morpheme annotations will be lost during the cleaning phase.
 
-[8]
 Now we can phonologize the corpora. For this, we need to have the script new-syllabify-corpus.pl, as well as the Chintang and Japanese ValidOnsets and Vowels files in the $SCRIPT_FOLDER path. 
 The results will be a clean_corpus-tags.txt file and a clean_corpus-gold.txt file for each one of the 10 parts. 
 The last commands do not find anything (normally), they are just for precaution measures.
 
-[9]
 This command would give the descriptive statistics of the corpus. Attention! The commands in steps 9,10,11 and 12 can only be ran if we have installed the old CDSwordSeg and the new wordseg package on oberon.
 
-[10]
 Now it's segmentation time. Always in the for loop, we run TPs and DiBS with the new wordseg package on oberon. We should also declare the gold and tags files that have been created above during the phonologization phase. 
 
 [11]
